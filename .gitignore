@@ -1,0 +1,73 @@
+################################
+# GENERAL
+################################
+.DS_Store
+*.log
+*.pem
+*.key
+
+################################
+# NODE (GLOBAL)
+################################
+node_modules/
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+pnpm-debug.log*
+
+################################
+# ENV FILES (DO NOT PUSH)
+################################
+.env
+.env.*
+.env*.local
+
+################################
+# EXPO / REACT NATIVE (MOBILE)
+################################
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Metro
+.metro-health-check*
+
+################################
+# MOBILE NATIVE FILES
+################################
+**/.kotlin/
+**/*.jks
+**/*.p8
+**/*.p12
+**/*.mobileprovision
+
+################################
+# GENERATED NATIVE FOLDERS
+################################
+mobile/ios/
+mobile/android/
+
+################################
+# BACKEND NODE (BUILD / CACHE)
+################################
+backend/dist/
+backend/build/
+backend/.cache/
+backend/logs/
+
+################################
+# TYPESCRIPT
+################################
+*.tsbuildinfo
+
+################################
+# EDITORS
+################################
+.vscode/
+.idea/
+
+################################
+# TEMP / EXAMPLES
+################################
+app-example/
