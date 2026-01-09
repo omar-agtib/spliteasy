@@ -9,7 +9,10 @@ const { computeBalances, simplifyDebts } = require("../utils/balances");
 const { createRoomSchema, joinRoomSchema } = require("../validation/schemas");
 
 router.get("/", auth, async (req, res) => {
-  const rooms = await Room.find({ "members.userId": req.user._id, isArchived: false })
+  const rooms = await Room.find({
+    "members.userId": req.user._id,
+    isArchived: false,
+  })
     .sort({ updatedAt: -1 })
     .lean();
   res.json({ rooms });
@@ -29,7 +32,11 @@ router.post("/", auth, async (req, res) => {
     members: [{ userId: req.user._id, role: "admin" }],
   });
 
-  await Message.create({ roomId: room._id, type: "system", message: `${req.user.name} created the room.` });
+  await Message.create({
+    roomId: room._id,
+    type: "system",
+    message: `${req.user.name} created the room.`,
+  });
   res.json({ room });
 });
 
@@ -40,11 +47,17 @@ router.post("/join", auth, async (req, res) => {
   const room = await Room.findOne({ inviteCode: value.inviteCode });
   if (!room) return res.status(404).json({ message: "Room not found" });
 
-  const isMember = room.members.some((m) => String(m.userId) === String(req.user._id));
+  const isMember = room.members.some(
+    (m) => String(m.userId) === String(req.user._id)
+  );
   if (!isMember) {
     room.members.push({ userId: req.user._id, role: "member" });
     await room.save();
-    await Message.create({ roomId: room._id, type: "system", message: `${req.user.name} joined the room.` });
+    await Message.create({
+      roomId: room._id,
+      type: "system",
+      message: `${req.user.name} joined the room.`,
+    });
   }
 
   res.json({ room });
@@ -54,11 +67,15 @@ router.get("/:roomId", auth, async (req, res) => {
   const room = await Room.findById(req.params.roomId).lean();
   if (!room) return res.status(404).json({ message: "Room not found" });
 
-  const isMember = room.members.some((m) => String(m.userId) === String(req.user._id));
+  const isMember = room.members.some(
+    (m) => String(m.userId) === String(req.user._id)
+  );
   if (!isMember) return res.status(403).json({ message: "Forbidden" });
 
-  const memberIds = room.members.map(m => m.userId);
-  const users = await User.find({ _id: { $in: memberIds } }).select("_id name").lean();
+  const memberIds = room.members.map((m) => m.userId);
+  const users = await User.find({ _id: { $in: memberIds } })
+    .select("_id name")
+    .lean();
 
   res.json({ room, users });
 });
@@ -67,16 +84,46 @@ router.get("/:roomId/summary", auth, async (req, res) => {
   const room = await Room.findById(req.params.roomId).lean();
   if (!room) return res.status(404).json({ message: "Room not found" });
 
-  const isMember = room.members.some((m) => String(m.userId) === String(req.user._id));
+  const isMember = room.members.some(
+    (m) => String(m.userId) === String(req.user._id)
+  );
   if (!isMember) return res.status(403).json({ message: "Forbidden" });
 
-  const expenses = await Expense.find({ roomId: room._id, isDeleted: false }).lean();
+  const expenses = await Expense.find({
+    roomId: room._id,
+    isDeleted: false,
+  }).lean();
   const memberIds = room.members.map((m) => m.userId);
   const balances = computeBalances(expenses, memberIds);
   const transfers = simplifyDebts(balances);
-  const totalSpent = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const totalSpent = expenses.reduce(
+    (sum, e) => sum + (Number(e.amount) || 0),
+    0
+  );
 
-  res.json({ totalSpent: Math.round(totalSpent * 100) / 100, balances, transfers });
+  res.json({
+    totalSpent: Math.round(totalSpent * 100) / 100,
+    balances,
+    transfers,
+  });
+});
+
+// NEW ENDPOINT: Get users for a specific room
+router.get("/:roomId/users", auth, async (req, res) => {
+  const room = await Room.findById(req.params.roomId).lean();
+  if (!room) return res.status(404).json({ message: "Room not found" });
+
+  const isMember = room.members.some(
+    (m) => String(m.userId) === String(req.user._id)
+  );
+  if (!isMember) return res.status(403).json({ message: "Forbidden" });
+
+  const memberIds = room.members.map((m) => m.userId);
+  const users = await User.find({ _id: { $in: memberIds } })
+    .select("_id name email phone")
+    .lean();
+
+  res.json({ users });
 });
 
 module.exports = router;

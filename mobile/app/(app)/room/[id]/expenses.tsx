@@ -13,7 +13,7 @@ import {
   ScrollView,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { useLocalSearchParams, router, useSegments } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
@@ -22,6 +22,7 @@ import { useRoomSocket } from "../../../../src/socket/useRoomSocket";
 import { Card } from "../../../../components/Card";
 import { PrimaryButton } from "../../../../components/PrimaryButton";
 import { useAuthStore } from "../../../../src/store/auth";
+import { RoomTabBar } from "./tabs";
 
 const categories = [
   "food",
@@ -36,11 +37,14 @@ type SplitMode = "equal" | "unequal";
 
 export default function Expenses() {
   const { t } = useTranslation();
-  const segments = useSegments();
   const params = useLocalSearchParams<{ id?: string }>();
 
-  // Extract roomId from either params or segments
-  const roomId = params.id || (segments[3] as string);
+  const roomId =
+    typeof params.id === "string"
+      ? params.id
+      : Array.isArray(params.id)
+        ? params.id[0]
+        : "";
 
   const me = useAuthStore((s) => s.user);
   const { room, users, refetchAll } = useRoomSocket(roomId);
@@ -195,128 +199,132 @@ export default function Expenses() {
   }
 
   return (
-    <View className="flex-1 bg-white dark:bg-black px-5 pt-14">
-      <Animated.View
-        entering={FadeInDown.duration(450)}
-        className="flex-row items-center justify-between"
-      >
-        <View className="flex-1 pr-3">
-          <Text className="text-2xl font-semibold text-zinc-900 dark:text-white">
-            {t("expenses.title")}
-          </Text>
-          <Text className="text-zinc-500 mt-1">{room?.name ?? ""}</Text>
-        </View>
-        <Pressable
-          onPress={() => router.back()}
-          className="px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-900 active:opacity-80"
+    <View className="flex-1 bg-white dark:bg-black">
+      <View className="px-5 pt-14 flex-1">
+        <Animated.View
+          entering={FadeInDown.duration(450)}
+          className="flex-row items-center justify-between"
         >
-          <Text className="text-zinc-700 dark:text-white">
-            {t("common.back")}
-          </Text>
-        </Pressable>
-      </Animated.View>
-
-      <Animated.View
-        entering={FadeInDown.delay(80).duration(450)}
-        className="mt-5"
-      >
-        <PrimaryButton
-          title={t("expenses.add")}
-          onPress={() => setOpen(true)}
-        />
-      </Animated.View>
-
-      <FlatList
-        className="mt-6"
-        data={expenses}
-        keyExtractor={(e) => e._id}
-        refreshing={isFetching}
-        onRefresh={refetch}
-        ItemSeparatorComponent={() => <View className="h-3" />}
-        renderItem={({ item }) => {
-          const mySplit = (item.splitBetween ?? []).find(
-            (s: any) => String(s.userId) === String(me?._id)
-          );
-          const mySettled = !!mySplit?.settled;
-
-          return (
-            <Card>
-              <View className="flex-row items-center justify-between">
-                <Text className="text-lg font-semibold text-zinc-900 dark:text-white">
-                  {item.description}
-                </Text>
-                <Text className="text-lg font-semibold text-zinc-900 dark:text-white">
-                  {item.amount} {room?.currency ?? "MAD"}
-                </Text>
-              </View>
-              <Text className="text-zinc-500 mt-1">
-                {item.category} • {new Date(item.date).toLocaleDateString()}
-              </Text>
-
-              <Text className="text-zinc-700 dark:text-zinc-200 mt-2">
-                {t("expenses.paidBy")}:{" "}
-                <Text className="font-semibold">
-                  {nameById[item.paidBy] ?? "—"}
-                </Text>
-              </Text>
-
-              <Text className="text-zinc-700 dark:text-zinc-200 mt-1">
-                {t("expenses.splitWith")}:{" "}
-                <Text className="font-semibold">
-                  {(item.splitBetween ?? [])
-                    .map(
-                      (s: any) =>
-                        `${nameById[s.userId] ?? "—"} (${s.amount}${s.settled ? "✓" : ""})`
-                    )
-                    .join(", ")}
-                </Text>
-              </Text>
-
-              {item.receiptImage ? (
-                <Pressable
-                  onPress={() => {}}
-                  className="mt-3 active:opacity-80"
-                >
-                  <Image
-                    source={{ uri: item.receiptImage }}
-                    style={{ width: "100%", height: 160, borderRadius: 16 }}
-                  />
-                </Pressable>
-              ) : (
-                <Pressable
-                  onPress={() => uploadReceipt(item._id)}
-                  className="mt-3 px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 active:opacity-80"
-                >
-                  <Text className="text-zinc-900 dark:text-white">
-                    📷 Upload receipt
-                  </Text>
-                </Pressable>
-              )}
-
-              {mySplit && String(item.paidBy) !== String(me?._id) && (
-                <Pressable
-                  onPress={() => markMyShareSettled(item._id)}
-                  disabled={mySettled}
-                  className={`mt-3 px-4 py-3 rounded-2xl ${mySettled ? "bg-zinc-200 dark:bg-zinc-800" : "bg-black dark:bg-white"} active:opacity-80`}
-                >
-                  <Text
-                    className={`${mySettled ? "text-zinc-700 dark:text-zinc-200" : "text-white dark:text-black"} font-semibold`}
-                  >
-                    {mySettled
-                      ? "Settled ✓"
-                      : `Mark my share paid (${mySplit.amount} ${room?.currency ?? "MAD"})`}
-                  </Text>
-                </Pressable>
-              )}
-            </Card>
-          );
-        }}
-        ListEmptyComponent={
-          <View className="mt-10">
-            <Text className="text-zinc-500">{t("expenses.empty")}</Text>
+          <View className="flex-1 pr-3">
+            <Text className="text-2xl font-semibold text-zinc-900 dark:text-white">
+              {t("expenses.title")}
+            </Text>
+            <Text className="text-zinc-500 mt-1">{room?.name ?? ""}</Text>
           </View>
-        }
-      />
+          <Pressable
+            onPress={() => router.back()}
+            className="px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-900 active:opacity-80"
+          >
+            <Text className="text-zinc-700 dark:text-white">
+              {t("common.back")}
+            </Text>
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.delay(80).duration(450)}
+          className="mt-5"
+        >
+          <PrimaryButton
+            title={t("expenses.add")}
+            onPress={() => setOpen(true)}
+          />
+        </Animated.View>
+
+        <FlatList
+          className="mt-6"
+          data={expenses}
+          keyExtractor={(e) => e._id}
+          refreshing={isFetching}
+          onRefresh={refetch}
+          ItemSeparatorComponent={() => <View className="h-3" />}
+          renderItem={({ item }) => {
+            const mySplit = (item.splitBetween ?? []).find(
+              (s: any) => String(s.userId) === String(me?._id)
+            );
+            const mySettled = !!mySplit?.settled;
+
+            return (
+              <Card>
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-lg font-semibold text-zinc-900 dark:text-white">
+                    {item.description}
+                  </Text>
+                  <Text className="text-lg font-semibold text-zinc-900 dark:text-white">
+                    {item.amount} {room?.currency ?? "MAD"}
+                  </Text>
+                </View>
+                <Text className="text-zinc-500 mt-1">
+                  {item.category} • {new Date(item.date).toLocaleDateString()}
+                </Text>
+
+                <Text className="text-zinc-700 dark:text-zinc-200 mt-2">
+                  {t("expenses.paidBy")}:{" "}
+                  <Text className="font-semibold">
+                    {nameById[item.paidBy] ?? "—"}
+                  </Text>
+                </Text>
+
+                <Text className="text-zinc-700 dark:text-zinc-200 mt-1">
+                  {t("expenses.splitWith")}:{" "}
+                  <Text className="font-semibold">
+                    {(item.splitBetween ?? [])
+                      .map(
+                        (s: any) =>
+                          `${nameById[s.userId] ?? "—"} (${s.amount}${s.settled ? "✓" : ""})`
+                      )
+                      .join(", ")}
+                  </Text>
+                </Text>
+
+                {item.receiptImage ? (
+                  <Pressable
+                    onPress={() => {}}
+                    className="mt-3 active:opacity-80"
+                  >
+                    <Image
+                      source={{ uri: item.receiptImage }}
+                      style={{ width: "100%", height: 160, borderRadius: 16 }}
+                    />
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={() => uploadReceipt(item._id)}
+                    className="mt-3 px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 active:opacity-80"
+                  >
+                    <Text className="text-zinc-900 dark:text-white">
+                      📷 Upload receipt
+                    </Text>
+                  </Pressable>
+                )}
+
+                {mySplit && String(item.paidBy) !== String(me?._id) && (
+                  <Pressable
+                    onPress={() => markMyShareSettled(item._id)}
+                    disabled={mySettled}
+                    className={`mt-3 px-4 py-3 rounded-2xl ${mySettled ? "bg-zinc-200 dark:bg-zinc-800" : "bg-black dark:bg-white"} active:opacity-80`}
+                  >
+                    <Text
+                      className={`${mySettled ? "text-zinc-700 dark:text-zinc-200" : "text-white dark:text-black"} font-semibold`}
+                    >
+                      {mySettled
+                        ? "Settled ✓"
+                        : `Mark my share paid (${mySplit.amount} ${room?.currency ?? "MAD"})`}
+                    </Text>
+                  </Pressable>
+                )}
+              </Card>
+            );
+          }}
+          ListEmptyComponent={
+            <View className="mt-10">
+              <Text className="text-zinc-500">{t("expenses.empty")}</Text>
+            </View>
+          }
+        />
+      </View>
+
+      <RoomTabBar />
 
       <Modal
         visible={open}

@@ -1,3 +1,4 @@
+// backend/src/routes/message.routes.js
 const router = require("express").Router();
 const { auth } = require("../middleware/auth");
 const { requireRoomMember } = require("../middleware/roomMember");

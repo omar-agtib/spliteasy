@@ -11,17 +11,17 @@ import {
   Platform,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../../src/api/api";
 import { useAuthStore } from "../../../../src/store/auth";
 import { useRoomSocket } from "../../../../src/socket/useRoomSocket";
+import { RoomTabBar } from "./tabs";
 
 export default function Chat() {
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ id?: string }>();
 
-  // roomId comes from the dynamic route param: /room/[id]/chat
   const roomId =
     typeof params.id === "string"
       ? params.id
@@ -37,6 +37,7 @@ export default function Chat() {
     for (const u of users) m[String(u._id)] = u.name;
     return m;
   }, [users]);
+  console.log("users:", users);
 
   const [messages, setMessages] = useState<any[]>([]);
   const [value, setValue] = useState("");
@@ -84,7 +85,7 @@ export default function Chat() {
 
   return (
     <View className="flex-1 bg-white dark:bg-black">
-      <View className="px-5 pt-4 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+      <View className="px-5 pt-14 pb-3 border-b border-zinc-200 dark:border-zinc-800">
         <Text className="text-xl font-semibold text-zinc-900 dark:text-white">
           {room?.name ?? t("Chat")}
         </Text>
@@ -149,6 +150,8 @@ export default function Chat() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      <RoomTabBar />
     </View>
   );
 }

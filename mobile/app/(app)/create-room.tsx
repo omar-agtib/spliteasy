@@ -24,7 +24,7 @@ export default function RoomsCreate() {
         type: "general",
         currency: "MAD",
       });
-      router.replace("/(app)/rooms");
+      router.replace("/(app)/(tabs)/home");
     } catch (e: any) {
       setErr(e?.response?.data?.message || "Failed");
     }

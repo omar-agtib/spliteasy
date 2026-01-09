@@ -20,7 +20,7 @@ export default function RoomsJoin() {
       await api.post("/rooms/join", {
         inviteCode: inviteCode.trim().toUpperCase(),
       });
-      router.replace("/(app)/rooms");
+      router.replace("/(app)/(tabs)/home");
     } catch (e: any) {
       setErr(e?.response?.data?.message || "Failed");
     }

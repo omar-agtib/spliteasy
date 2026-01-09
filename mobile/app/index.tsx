@@ -8,7 +8,7 @@ export default function Index() {
   const hydrated = useAuthStore((s) => s.hydrated);
   if (!hydrated) return null;
   return token ? (
-    <Redirect href="/(app)/rooms" />
+    <Redirect href="/(app)/(tabs)/home" />
   ) : (
     <Redirect href="/(auth)/login" />
   );

@@ -2,11 +2,12 @@
 
 import { View, Text, Pressable, ScrollView } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { useLocalSearchParams, router, useSegments } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../../src/api/api";
 import { Card } from "../../../../components/Card";
 import { BarChart, LineChart } from "react-native-gifted-charts";
+import { RoomTabBar } from "./tabs";
 
 function toDayKey(d: Date) {
   const y = d.getFullYear();
@@ -16,11 +17,14 @@ function toDayKey(d: Date) {
 }
 
 export default function Analytics() {
-  const segments = useSegments();
   const params = useLocalSearchParams<{ id?: string }>();
 
-  // Extract roomId from either params or segments
-  const roomId = params.id || (segments[3] as string);
+  const roomId =
+    typeof params.id === "string"
+      ? params.id
+      : Array.isArray(params.id)
+        ? params.id[0]
+        : "";
 
   const { data } = useQuery({
     queryKey: ["expenses", roomId],
@@ -73,84 +77,88 @@ export default function Analytics() {
   }
 
   return (
-    <View className="flex-1 bg-white dark:bg-black px-5 pt-14">
-      <Animated.View
-        entering={FadeInDown.duration(450)}
-        className="flex-row items-center justify-between"
-      >
-        <View>
-          <Text className="text-2xl font-semibold text-zinc-900 dark:text-white">
-            Analytics
-          </Text>
-          <Text className="text-zinc-500 mt-1">Insights for this room</Text>
-        </View>
-
-        <Pressable
-          onPress={() => router.back()}
-          className="px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-900 active:opacity-80"
+    <View className="flex-1 bg-white dark:bg-black">
+      <View className="px-5 pt-14 flex-1">
+        <Animated.View
+          entering={FadeInDown.duration(450)}
+          className="flex-row items-center justify-between"
         >
-          <Text className="text-zinc-700 dark:text-white">Back</Text>
-        </Pressable>
-      </Animated.View>
+          <View>
+            <Text className="text-2xl font-semibold text-zinc-900 dark:text-white">
+              Analytics
+            </Text>
+            <Text className="text-zinc-500 mt-1">Insights for this room</Text>
+          </View>
 
-      <ScrollView
-        className="mt-6"
-        contentContainerStyle={{ paddingBottom: 30 }}
-      >
-        <Card className="mb-4">
-          <Text className="text-lg font-semibold text-zinc-900 dark:text-white">
-            Spend by category
-          </Text>
+          <Pressable
+            onPress={() => router.back()}
+            className="px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-900 active:opacity-80"
+          >
+            <Text className="text-zinc-700 dark:text-white">Back</Text>
+          </Pressable>
+        </Animated.View>
 
-          {barData.length === 0 ? (
-            <Text className="text-zinc-500 mt-3">No data yet.</Text>
-          ) : (
-            <View className="mt-4">
-              <BarChart
-                data={barData}
-                barWidth={22}
-                spacing={18}
-                roundedTop
-                roundedBottom
-                hideRules
-                xAxisThickness={0}
-                yAxisThickness={0}
-                yAxisTextStyle={{ fontSize: 10 }}
-                xAxisLabelTextStyle={{ fontSize: 10 }}
-                noOfSections={4}
-                isAnimated
-                animationDuration={700}
-              />
-            </View>
-          )}
-        </Card>
+        <ScrollView
+          className="mt-6"
+          contentContainerStyle={{ paddingBottom: 30 }}
+        >
+          <Card className="mb-4">
+            <Text className="text-lg font-semibold text-zinc-900 dark:text-white">
+              Spend by category
+            </Text>
 
-        <Card>
-          <Text className="text-lg font-semibold text-zinc-900 dark:text-white">
-            Spend over time (last 14 days)
-          </Text>
+            {barData.length === 0 ? (
+              <Text className="text-zinc-500 mt-3">No data yet.</Text>
+            ) : (
+              <View className="mt-4">
+                <BarChart
+                  data={barData}
+                  barWidth={22}
+                  spacing={18}
+                  roundedTop
+                  roundedBottom
+                  hideRules
+                  xAxisThickness={0}
+                  yAxisThickness={0}
+                  yAxisTextStyle={{ fontSize: 10 }}
+                  xAxisLabelTextStyle={{ fontSize: 10 }}
+                  noOfSections={4}
+                  isAnimated
+                  animationDuration={700}
+                />
+              </View>
+            )}
+          </Card>
 
-          {lineData.length === 0 ? (
-            <Text className="text-zinc-500 mt-3">No data yet.</Text>
-          ) : (
-            <View className="mt-4">
-              <LineChart
-                data={lineData}
-                hideRules
-                xAxisThickness={0}
-                yAxisThickness={0}
-                yAxisTextStyle={{ fontSize: 10 }}
-                xAxisLabelTextStyle={{ fontSize: 10 }}
-                spacing={22}
-                initialSpacing={10}
-                isAnimated
-                animationDuration={700}
-                curved
-              />
-            </View>
-          )}
-        </Card>
-      </ScrollView>
+          <Card>
+            <Text className="text-lg font-semibold text-zinc-900 dark:text-white">
+              Spend over time (last 14 days)
+            </Text>
+
+            {lineData.length === 0 ? (
+              <Text className="text-zinc-500 mt-3">No data yet.</Text>
+            ) : (
+              <View className="mt-4">
+                <LineChart
+                  data={lineData}
+                  hideRules
+                  xAxisThickness={0}
+                  yAxisThickness={0}
+                  yAxisTextStyle={{ fontSize: 10 }}
+                  xAxisLabelTextStyle={{ fontSize: 10 }}
+                  spacing={22}
+                  initialSpacing={10}
+                  isAnimated
+                  animationDuration={700}
+                  curved
+                />
+              </View>
+            )}
+          </Card>
+        </ScrollView>
+      </View>
+
+      <RoomTabBar />
     </View>
   );
 }
